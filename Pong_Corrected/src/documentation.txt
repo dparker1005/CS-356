@@ -1,0 +1,148 @@
+Pong - Created By David Parker
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Description:
+This game is very similar to the classic game of Pong,except that there are multiple balls in play
+at once and no visual representation of what is going on in the game other than the text output on
+the command line. Oh well.
+
+The setup is such that there is one computer player on either side of the game, represented by a paddle
+object.
+
+At the beginning of the game, the ball is fed at from the middle of the game in the x direction and
+from a random y position with a random y velocity
+If the ball hits a paddle, their x velocity is multiplied by -1.
+If the ball hits either the top or bottom wall of the game, their y velocity is multiplied by -1.
+If 2 balls collide, both of their x velocities are multiplied by -1. (I know that this is not
+necessarily how physics works; however, I wanted to keep velocities at whole numbers without
+over-complicating the game)
+The balls also speed up after each collision with a paddle by decreasing the delay time between
+movement updates for the ball.
+When a player lets the ball pass them, the other player wins.
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Classes:
+Pong.scala
+Ball.scala
+Paddle.scala
+
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Pong.scala:
+
+	Variables:
+		-Array[Ball] balls
+		-Boolean gameEnded
+		-int height (of the game)
+		-int length (of the game)
+		-Paddle leftPaddle
+		-Paddle rightPaddle
+		-int rightScore
+		-int leftScore
+		-boolean muteBallCords (for debugging purposes)
+		-scala.util.Random r
+		-int numBalls
+		
+	Methods:
+		-ballAtSideOfScreen(b: Ball)
+		-checkBallCollisions(b: Ball)
+		-printScore()
+		
+	Quick Summary of Class:
+		After all of the above variables are declared, the threads for both of the paddles
+		start and the balls are served(ie. their threads are started). The side to which the
+		ball is served alternates for each ball and there is also a delay between each serve.
+		
+		The variables that can be changed to alter the gameplay are height, length numBalls,
+		and the arguments for the paddles(which will be discussed later on). The array
+		'balls' is used to keep track of all the balls in the game, and gameEnded is true
+		once one side has won.
+		
+		The method ballAtSideOfScreen is called from a Ball object once its x coordinate
+		has reached 0 or the length of the game. At this point, its y coordinate is
+		compared to that of the paddle on the corresponding side. If it would have
+		hit the paddle(taking to account the paddle's length), the x velocity of the ball is
+		multiplied by -1. Otherwise, the 'alive' variable of the ball is set to false(which
+		will be discussed later) and a point is added to the score of the paddle that was not
+		scored on. At this point, if a paddle has accumulated an amount of points greater than
+		half the number of balls in the game, they win.
+		
+		The method checkBallCollissions is called before the movement of each ball. If it's x and
+		y positions are identical to any other ball on the screen, the x coordinates of both
+		the balls are multiplied by -1 to simulate them bouncing off of each other.
+		
+		The method printScore simply prints the score of the match.
+		
++++++++++++++++++++++++++++++++++++++++++++++++++
+		
+Ball.scala
+
+	Variables:
+		-Boolean alive
+		-Pong game
+		-int posX
+		-int posY
+		-int velX
+		-int velY
+		-int speed
+		
+	Methods:
+		-run()
+		-setVelocity(velX: int, velY: int)
+		-speedUp()
+		-updateLocation()
+		
+	Quick Summary of Class:
+		This class is an extension of Thread. posX and posY store the current x,y coordinates
+		of the ball and velX and velY store the current x,y velocities of the ball. The
+		x velocity is always 1 or -1, and the speed at which the ball moves is determined
+		by the speed parameter, which controls how frequently the ball updates location.
+		The higher the speed value, the slower the ball. Alive is turned to true once
+		the ball is sent into play and turned to false once it scores or the game ends. 
+		Game is a reference to the Pong object that is running the game.
+		
+		The run method begins by turning the 'alive' variable of the ball to true. It then
+		enters a loop that runs while the ball is alive and the game is not over. In this
+		loop, the thread waits for 'speed' milliseconds, then checks for collisions and updates
+		location. This happens repeatedly until the loop is broken.
+		
+		The setVelocity method is called to set the velocity of the ball whenever it is changed.
+		speedUp is called to decrease the 'speed' variable of the ball, therefore making
+		it faster. Both of these functions are called when checking for collisions with
+		other balls and paddles.
+		
+		The updateLocation method is what makes the ball move. It moves the ball based on
+		velX and velY, the then checks for collisions with the ceiling, floor and sides of
+		the game. Hitting the ceiling or floor multiplies velY by -1, and reaching either
+		side of the screen calls Pong.ballAtSideOfScreen.
+		
++++++++++++++++++++++++++++++++++++++++++++++++++		
+
+Paddle.scala
+
+	Variables:
+		-Pong game
+		-int posX
+		-int posY
+		-int speed
+		-int halfLength
+	
+	Methods:
+		-run()
+		-updateLocation()
+		
+	Quick Summary of Class:
+		This class is also an extension of Thread. The only difference between these 
+		variables and their equivalents in the Ball class is the halfLength. This 
+		variable defines the length from the center of the paddle to each of its sides. 
+		This essentially determines the paddle's length. 
+		
+		The run method is nearly identical to Ball's run method, except that it does
+		not check for collisions with other balls. 
+		
+		updateLocation is also very similar, except the paddle needs to decided which
+		direction to move in the y-axis and does not move in the x-axis. It determines
+		which way to move by taking the average y-position of each ball currently in
+		play, and moving 1 unit in that direction.
